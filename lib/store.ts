@@ -9,6 +9,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { CodeCard, CardProgress } from "@/types";
 import { buildQueue } from "./repetition";
+import { recordSwipe } from "./streak";
 
 function storageKey(repoName: string) {
   return `doomscroll:progress:${repoName}`;
@@ -93,6 +94,9 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
         setJustMasteredCard(card);
       }
 
+      // Record swipe for streak tracking
+      void recordSwipe(isMastered && !wasMastered);
+
       return {
         ...prev,
         [id]: { cardId: id, seen, mastered: isMastered, lastSeen: Date.now() },
@@ -104,6 +108,9 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
     if (!currentCard) return;
     const id = currentCard.id;
     setLastSwipedId(id);
+    // Record swipe for streak tracking
+    void recordSwipe(false);
+
     setProgress((prev) => ({
       ...prev,
       [id]: {

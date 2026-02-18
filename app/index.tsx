@@ -25,6 +25,8 @@ import { ingestRepo, type IngestStatus } from "@/lib/ingest";
 import { mockCards } from "@/lib/mock-data";
 import { haptic } from "@/lib/haptics";
 import { getRecent, addRecent, type RecentRepo } from "@/lib/recent";
+import { getStreak, recordRepo, type StreakData } from "@/lib/streak";
+import { hasOnboarded } from "./onboarding";
 
 export default function Home() {
   const insets = useSafeAreaInsets();
@@ -33,14 +35,21 @@ export default function Home() {
   const [status, setStatus] = useState<IngestStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentRepo[]>([]);
+  const [streak, setStreak] = useState<StreakData | null>(null);
 
   useEffect(() => {
+    // Check onboarding
+    hasOnboarded().then((done) => {
+      if (!done) router.replace("/onboarding");
+    });
     getRecent().then(setRecent);
+    getStreak().then(setStreak);
   }, []);
 
-  // Reload recent list when returning to this screen
+  // Reload recent list and streak when returning to this screen
   const refreshRecent = useCallback(() => {
     getRecent().then(setRecent);
+    getStreak().then(setStreak);
   }, []);
 
   const isLoading =
@@ -57,7 +66,8 @@ export default function Home() {
       const result = await ingestRepo(input.trim(), setStatus);
       haptic.success();
 
-      // Save to recent repos
+      // Track repo + save to recent
+      await recordRepo();
       await addRecent({
         owner: result.meta.fullName.split("/")[0],
         repo: result.meta.fullName.split("/")[1],
@@ -108,6 +118,7 @@ export default function Home() {
     ingestRepo(repo.fullName, setStatus)
       .then(async (result) => {
         haptic.success();
+        await recordRepo();
         await addRecent({
           owner: repo.owner,
           repo: repo.repo,
@@ -154,8 +165,19 @@ export default function Home() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
-        <Text style={styles.title}>doomscroll</Text>
+        {/* Title + streak */}
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>doomscroll</Text>
+          {streak && streak.current > 0 && (
+            <Pressable
+              style={styles.streakBadge}
+              onPress={() => router.push("/stats")}
+            >
+              <Text style={styles.streakFire}>🔥</Text>
+              <Text style={styles.streakCount}>{streak.current}</Text>
+            </Pressable>
+          )}
+        </View>
         <Text style={styles.subtitle}>
           master any codebase{"\n"}by scrolling through it
         </Text>
@@ -271,11 +293,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingBottom: space.xxl,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   title: {
     fontSize: 40,
     fontWeight: "800",
     color: color.text,
     letterSpacing: -1.5,
+  },
+  streakBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: color.surface,
+    borderRadius: radius.full,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: color.borderSubtle,
+  },
+  streakFire: {
+    fontSize: 16,
+  },
+  streakCount: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: color.amber,
+    fontFamily: "monospace",
   },
   subtitle: {
     fontSize: 17,
