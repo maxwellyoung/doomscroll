@@ -13,7 +13,16 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: color.bg },
           animation: "fade",
         }}
-      />
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen
+          name="feed"
+          options={{
+            animation: "slide_from_right",
+            gestureEnabled: true,
+          }}
+        />
+      </Stack>
     </GestureHandlerRootView>
   );
 }

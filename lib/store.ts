@@ -3,14 +3,16 @@
  *
  * One hook. One mental model: a queue you swipe through.
  * The queue reorders itself based on what you know.
- * Progress persists across sessions.
+ * Progress persists per-repo across sessions.
  */
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { CodeCard, CardProgress } from "@/types";
 import { buildQueue } from "./repetition";
 
-const STORAGE_KEY = "doomscroll:progress";
+function storageKey(repoName: string) {
+  return `doomscroll:progress:${repoName}`;
+}
 
 interface DeckState {
   currentCard: CodeCard | null;
@@ -28,35 +30,26 @@ interface DeckState {
   restart: () => void;
 }
 
-async function loadProgress(): Promise<Record<string, CardProgress>> {
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-async function saveProgress(progress: Record<string, CardProgress>) {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  } catch {}
-}
-
-export function useCardDeck(cards: CodeCard[]): DeckState {
+export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState {
   const [progress, setProgress] = useState<Record<string, CardProgress>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [justMasteredCard, setJustMasteredCard] = useState<CodeCard | null>(null);
   const [lastSwipedId, setLastSwipedId] = useState<string | undefined>();
   const total = cards.length;
+  const key = storageKey(repoName);
 
   // Load persisted progress on mount
   useEffect(() => {
-    loadProgress().then((saved) => {
-      setProgress(saved);
-      setIsLoading(false);
-    });
-  }, []);
+    AsyncStorage.getItem(key)
+      .then((raw) => {
+        setProgress(raw ? JSON.parse(raw) : {});
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setProgress({});
+        setIsLoading(false);
+      });
+  }, [key]);
 
   // Save progress on every change (skip initial load)
   const isFirstRender = useRef(true);
@@ -66,9 +59,9 @@ export function useCardDeck(cards: CodeCard[]): DeckState {
       return;
     }
     if (!isLoading) {
-      saveProgress(progress);
+      AsyncStorage.setItem(key, JSON.stringify(progress)).catch(() => {});
     }
-  }, [progress, isLoading]);
+  }, [progress, isLoading, key]);
 
   // Queue recomputes when progress changes
   const queue = useMemo(
@@ -134,8 +127,8 @@ export function useCardDeck(cards: CodeCard[]): DeckState {
   const restart = useCallback(() => {
     setProgress({});
     setLastSwipedId(undefined);
-    void AsyncStorage.removeItem(STORAGE_KEY);
-  }, []);
+    void AsyncStorage.removeItem(key);
+  }, [key]);
 
   return {
     currentCard,
