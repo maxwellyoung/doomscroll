@@ -1,0 +1,28 @@
+appId: com.maxwellyoung.doomscroll
+---
+
+# Screenshot 1: Onboarding - "master any codebase"
+- takeScreenshot: /Users/maxwellyoung/Development/screenshots/doomscroll/01_onboarding
+
+# Screenshot 2: Onboarding - "swipe to learn"
+- tapOn: "next"
+- waitForAnimationToEnd
+- takeScreenshot: /Users/maxwellyoung/Development/screenshots/doomscroll/02_swipe
+
+# Screenshot 3: Onboarding - "build a streak"
+- tapOn: "next"
+- waitForAnimationToEnd
+- takeScreenshot: /Users/maxwellyoung/Development/screenshots/doomscroll/03_streak
+
+# Complete onboarding
+- tapOn: "let's go"
+- waitForAnimationToEnd
+
+# Screenshot 4: Home screen
+- assertVisible: "doomscroll"
+- takeScreenshot: /Users/maxwellyoung/Development/screenshots/doomscroll/04_home
+
+# Screenshot 5: Feed with demo deck
+- tapOn: "or try the demo deck"
+- waitForAnimationToEnd
+- takeScreenshot: /Users/maxwellyoung/Development/screenshots/doomscroll/05_feed
