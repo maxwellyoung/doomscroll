@@ -42,6 +42,7 @@ export function CardStack({
           key={`${currentCard.id}-${index}`}
           card={currentCard}
           cardProgress={progress[currentCard.id]}
+          swipeCount={index}
           onSwipeLeft={onSwipeLeft}
           onSwipeRight={onSwipeRight}
           onSwipeUp={onSwipeUp}

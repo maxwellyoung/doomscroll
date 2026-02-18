@@ -32,6 +32,7 @@ const THRESHOLD = W * swipe.threshold;
 interface Props {
   card: CodeCard;
   cardProgress?: CardProgress;
+  swipeCount: number;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onSwipeUp: () => void;
@@ -40,6 +41,7 @@ interface Props {
 export function SwipeCard({
   card,
   cardProgress,
+  swipeCount,
   onSwipeLeft,
   onSwipeRight,
   onSwipeUp,
@@ -222,9 +224,12 @@ export function SwipeCard({
         <Text style={styles.title} numberOfLines={1}>
           {card.title}
         </Text>
-        <Text style={styles.filePath} numberOfLines={1}>
-          {card.filePath}
-        </Text>
+        <View style={styles.fileRow}>
+          <Text style={styles.filePath} numberOfLines={1}>
+            {card.filePath}
+          </Text>
+          <Text style={styles.langBadge}>{card.language}</Text>
+        </View>
 
         {/* Code — fills the reading area between title and explanation */}
         <ScrollView
@@ -239,16 +244,18 @@ export function SwipeCard({
         {/* Explanation — pinned near bottom */}
         <Text style={styles.explanation}>{card.explanation}</Text>
 
-        {/* Hint bar */}
-        <View style={styles.hintBar}>
-          <Text style={[styles.hint, { color: color.again }]}>
-            ← again
-          </Text>
-          <Text style={[styles.hint, { color: color.skip }]}>↑ skip</Text>
-          <Text style={[styles.hint, { color: color.got }]}>
-            got it →
-          </Text>
-        </View>
+        {/* Hint bar — fades after first 3 swipes */}
+        {swipeCount < 3 && (
+          <View style={styles.hintBar}>
+            <Text style={[styles.hint, { color: color.again }]}>
+              ← again
+            </Text>
+            <Text style={[styles.hint, { color: color.skip }]}>↑ skip</Text>
+            <Text style={[styles.hint, { color: color.got }]}>
+              got it →
+            </Text>
+          </View>
+        )}
       </Animated.View>
     </GestureDetector>
   );
@@ -348,12 +355,30 @@ const styles = StyleSheet.create({
     marginTop: space.md,
     letterSpacing: -0.5,
   },
+  fileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: space.lg,
+    marginTop: space.xs,
+    gap: space.sm,
+  },
   filePath: {
     fontSize: 12,
     color: color.textTertiary,
     fontFamily: "monospace",
-    paddingHorizontal: space.lg,
-    marginTop: space.xs,
+    flexShrink: 1,
+  },
+  langBadge: {
+    fontSize: 10,
+    color: color.textTertiary,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    backgroundColor: color.borderSubtle,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: "hidden",
   },
   // Code
   codeScroll: {

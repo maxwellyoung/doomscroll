@@ -108,7 +108,7 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
       ...prev,
       [id]: {
         cardId: id,
-        seen: (prev[id]?.seen ?? 0) + 1,
+        seen: 0, // Reset — you're starting over on this card
         mastered: false,
         lastSeen: Date.now(),
       },
