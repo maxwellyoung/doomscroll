@@ -4,7 +4,7 @@
     "slug": "doomscroll",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-1771387025319.png",
     "userInterfaceStyle": "dark",
     "scheme": "doomscroll",
     "newArchEnabled": true,
@@ -15,18 +15,28 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.doomscroll.app"
+      "bundleIdentifier": "com.maxwellyoung.doomscroll",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon-1771387025319.png",
         "backgroundColor": "#050505"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.doomscroll.app"
+      "package": "com.maxwellyoung.doomscroll"
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3d4b84da-adf2-460c-8c99-14af010e06d6"
+      }
+    },
+    "owner": "maxwellyoung"
   }
 }

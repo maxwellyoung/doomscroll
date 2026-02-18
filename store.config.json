@@ -1,0 +1,18 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "info": {
+      "en-US": {
+        "title": "doomscroll: Learn Code",
+        "subtitle": "Master Any Codebase by Swiping",
+        "description": "Turn any GitHub repo into a deck of swipeable code cards. Master codebases through spaced repetition — the same technique used to learn languages, now applied to code.\n\nHOW IT WORKS\n\n• Paste any public GitHub repo URL\n• We extract the key functions, types, and patterns\n• Swipe right if you understand it, left to see it again\n• Cards resurface using spaced repetition until you master them\n\nFEATURES\n\n• Supports TypeScript, JavaScript, Python, Rust, Go, and Swift\n• Syntax-highlighted code cards with context\n• Three-tier mastery system: unseen → learning → mastered\n• Streak tracking to build a daily learning habit\n• Per-repo progress saved locally\n• Recent repos for quick access\n• Beautiful dark interface built for focused reading\n• Haptic feedback on every interaction\n\nWHY DOOMSCROLL\n\nReading code is hard. Codebases are overwhelming. doomscroll breaks repos into digestible cards and uses spaced repetition to make the knowledge stick.\n\nSwipe right when you get it. Swipe left to see it again. Swipe up to skip. Master a card after 3 correct swipes.\n\nAll data stays on your device. No accounts, no cloud sync, no tracking.",
+        "keywords": ["code", "learn code", "github", "spaced repetition", "developer tools", "programming", "codebase", "flashcards"],
+        "privacyPolicyUrl": "https://ninetynine.digital/doomscroll/privacy",
+        "supportUrl": "https://ninetynine.digital/contact",
+        "marketingUrl": "https://ninetynine.digital"
+      }
+    },
+    "categories": ["EDUCATION", "DEVELOPER_TOOLS"],
+    "copyright": "2026 Maxwell Young"
+  }
+}
