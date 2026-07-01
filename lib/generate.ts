@@ -6,6 +6,7 @@
  * not from an AI hallucinating about what the code might do.
  */
 import type { CodeCard, CardType } from "@/types";
+import { generatePromptForBlock } from "./card-prompts";
 import type { ExtractedBlock } from "./extract";
 
 function blockTypeToCardType(type: ExtractedBlock["type"]): CardType {
@@ -89,6 +90,7 @@ export function generateCards(
     filePath: block.filePath,
     code: block.code,
     language: block.language,
+    prompt: generatePromptForBlock(block),
     explanation: generateExplanation(block),
     difficulty: estimateDifficulty(block),
   }));

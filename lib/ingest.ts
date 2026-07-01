@@ -13,6 +13,7 @@ import {
   filterCodeFiles,
   fetchFiles,
   type RepoMeta,
+  formatRepoSessionName,
 } from "./github";
 import { extractBlocks, rankBlocks } from "./extract";
 import { generateCards } from "./generate";
@@ -20,6 +21,8 @@ import { generateCards } from "./generate";
 export interface IngestResult {
   meta: RepoMeta;
   cards: CodeCard[];
+  repoSessionName: string;
+  scopePath?: string;
 }
 
 export type IngestStatus =
@@ -37,20 +40,34 @@ export async function ingestRepo(
   // 1. Parse input
   onStatus({ phase: "parsing" });
   const parsed = parseRepoInput(input);
-  if (!parsed) throw new Error("Invalid repo format. Use owner/repo or a GitHub URL.");
+  if (!parsed) {
+    throw new Error(
+      "Invalid repo format. Use owner/repo, owner/repo#path, or a GitHub URL."
+    );
+  }
 
-  const { owner, repo } = parsed;
+  const { owner, repo, ref, scopePath } = parsed;
 
   // 2. Fetch repo metadata
   onStatus({ phase: "fetching", message: `Loading ${owner}/${repo}...` });
   const meta = await fetchRepo(owner, repo);
 
   // 3. Fetch file tree
-  onStatus({ phase: "fetching", message: "Scanning file tree..." });
-  const tree = await fetchTree(owner, repo, meta.defaultBranch);
-  const codeFiles = filterCodeFiles(tree);
+  onStatus({
+    phase: "fetching",
+    message: scopePath
+      ? `Scanning ${scopePath}...`
+      : "Scanning file tree...",
+  });
+  const tree = await fetchTree(owner, repo, ref ?? meta.defaultBranch);
+  const codeFiles = filterCodeFiles(tree, scopePath);
 
   if (codeFiles.length === 0) {
+    if (scopePath) {
+      throw new Error(
+        `No supported code files found under ${scopePath}. Check the path and try again.`
+      );
+    }
     throw new Error("No supported code files found in this repo.");
   }
 
@@ -81,7 +98,12 @@ export async function ingestRepo(
   });
   const cards = generateCards(ranked);
 
-  const result = { meta, cards };
+  const result = {
+    meta,
+    cards,
+    repoSessionName: formatRepoSessionName(meta.fullName, scopePath),
+    scopePath,
+  };
   onStatus({ phase: "done", result });
   return result;
 }

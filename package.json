@@ -13,6 +13,7 @@
     "audiobook:rehearsal:bobby": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal --variant bobby-aggressive",
     "audiobook:rehearsal:standup": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal --variant standup-30sec",
     "audiobook:rehearsal:review": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal --variant review-defense",
+    "audiobook:runtime": ".venv/bin/python scripts/build_audiobook.py --cut runtime",
     "fallow": "npx --yes fallow",
     "fallow:dead-code": "npx --yes fallow dead-code",
     "fallow:dupes": "npx --yes fallow dupes",

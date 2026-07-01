@@ -7,6 +7,7 @@ export interface CodeCard {
   filePath: string;
   code: string;
   language: string;
+  prompt?: string;
   explanation: string;
   difficulty: 1 | 2 | 3;
 }
