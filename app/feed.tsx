@@ -67,7 +67,6 @@ export default function Feed() {
       </View>
 
       <Header
-        mastered={deck.mastered}
         total={deck.total}
         seen={Object.keys(deck.progress).length}
       />

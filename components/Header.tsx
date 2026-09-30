@@ -13,18 +13,17 @@ import { useEffect } from "react";
 import { color, space, spring } from "@/lib/design";
 
 interface Props {
-  mastered: number;
   total: number;
   seen: number;
 }
 
-export function Header({ mastered, total, seen }: Props) {
+export function Header({ total, seen }: Props) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
-    const target = total > 0 ? mastered / total : 0;
+    const target = total > 0 ? seen / total : 0;
     progress.value = withSpring(target, spring.gentle);
-  }, [mastered, total, progress]);
+  }, [seen, total, progress]);
 
   const barStyle = useAnimatedStyle(() => ({
     width: `${Math.min(progress.value * 100, 100)}%`,
@@ -35,11 +34,6 @@ export function Header({ mastered, total, seen }: Props) {
       <View style={styles.row}>
         <Text style={styles.title}>doomscroll</Text>
         <View style={styles.stats}>
-          <Text style={styles.stat}>
-            <Text style={styles.statValue}>{mastered}</Text>
-            <Text style={styles.statLabel}> reviewed</Text>
-          </Text>
-          <Text style={styles.divider}>·</Text>
           <Text style={styles.stat}>
             <Text style={styles.statValue}>{seen}</Text>
             <Text style={styles.statLabel}>/{total} seen</Text>
@@ -86,10 +80,6 @@ const styles = StyleSheet.create({
   statLabel: {
     color: color.textTertiary,
     fontFamily: "monospace",
-  },
-  divider: {
-    color: color.textTertiary,
-    fontSize: 13,
   },
   track: {
     height: 2,
