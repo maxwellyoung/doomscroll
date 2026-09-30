@@ -25,6 +25,16 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "qa-simulator": {
+      "extends": "production",
+      "environment": "production",
+      "distribution": "internal",
+      "autoIncrement": false,
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Release"
+      }
     }
   },
   "submit": {
