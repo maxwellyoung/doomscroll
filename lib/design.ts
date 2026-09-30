@@ -18,8 +18,8 @@ export const color = {
   borderSubtle: "#1a1a1a",
 
   text: "#e8e8e8",
-  textSecondary: "#7a7a7a",
-  textTertiary: "#454545",
+  textSecondary: "#939393",
+  textTertiary: "#888888",
   textInverse: "#050505",
 
   // Muted accents — they whisper, not shout
@@ -33,7 +33,7 @@ export const color = {
   // Semantic
   got: "#5ce89b",
   again: "#ff7070",
-  skip: "#7a7a7a",
+  skip: "#939393",
 } as const;
 
 // ─── Typography ──────────────────────────────────────────

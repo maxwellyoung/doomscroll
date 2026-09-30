@@ -19,10 +19,13 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { color, space, radius } from "@/lib/design";
 import { ingestRepo, type IngestStatus } from "@/lib/ingest";
+import { formatRepoSessionName } from "@/lib/github";
+import { hasGitHubToken } from "@/lib/github-auth";
 import { mockCards } from "@/lib/mock-data";
+import { saveDeckSession } from "@/lib/deck-session";
 import { haptic } from "@/lib/haptics";
 import { getRecent, addRecent, type RecentRepo } from "@/lib/recent";
 import { getStreak, recordRepo, type StreakData } from "@/lib/streak";
@@ -36,6 +39,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentRepo[]>([]);
   const [streak, setStreak] = useState<StreakData | null>(null);
+  const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
     // Check onboarding
@@ -44,12 +48,20 @@ export default function Home() {
     });
     getRecent().then(setRecent);
     getStreak().then(setStreak);
+    hasGitHubToken().then(setHasToken);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      hasGitHubToken().then(setHasToken);
+    }, [])
+  );
 
   // Reload recent list and streak when returning to this screen
   const refreshRecent = useCallback(() => {
     getRecent().then(setRecent);
     getStreak().then(setStreak);
+    hasGitHubToken().then(setHasToken);
   }, []);
 
   const isLoading =
@@ -72,20 +84,16 @@ export default function Home() {
         owner: result.meta.fullName.split("/")[0],
         repo: result.meta.fullName.split("/")[1],
         fullName: result.meta.fullName,
+        input: input.trim(),
+        scopePath: result.scopePath,
         description: result.meta.description ?? "",
         stars: result.meta.stars,
         cardCount: result.cards.length,
       });
 
-      router.push({
-        pathname: "/feed",
-        params: {
-          cards: JSON.stringify(result.cards),
-          repoName: result.meta.fullName,
-          repoDesc: result.meta.description ?? "",
-          repoStars: String(result.meta.stars),
-        },
-      });
+      const session = await saveDeckSession({ cards: result.cards, repoName: result.repoSessionName,
+        repoDesc: result.meta.description ?? "", repoStars: String(result.meta.stars) });
+      router.push({ pathname: "/feed", params: { session } });
       // Reset for when user comes back
       setStatus(null);
       setInput("");
@@ -97,25 +105,21 @@ export default function Home() {
     }
   };
 
-  const handleDemo = () => {
+  const handleDemo = async () => {
     haptic.light();
-    router.push({
-      pathname: "/feed",
-      params: {
-        cards: JSON.stringify(mockCards),
-        repoName: "demo/typescript-patterns",
-        repoDesc: "10 TypeScript patterns to master",
-        repoStars: "0",
-      },
-    });
+    try {
+      const session = await saveDeckSession({ cards: mockCards, repoName: "demo/typescript-patterns",
+        repoDesc: "10 TypeScript patterns to explore", repoStars: "0" });
+      router.push({ pathname: "/feed", params: { session } });
+    } catch { setError("Could not save this deck on the device. Try again."); }
   };
 
   const handleRecentTap = (repo: RecentRepo) => {
-    setInput(repo.fullName);
+    setInput(repo.input);
     // Auto-ingest
     haptic.light();
     setError(null);
-    ingestRepo(repo.fullName, setStatus)
+    ingestRepo(repo.input, setStatus)
       .then(async (result) => {
         haptic.success();
         await recordRepo();
@@ -123,19 +127,15 @@ export default function Home() {
           owner: repo.owner,
           repo: repo.repo,
           fullName: repo.fullName,
+          input: repo.input,
+          scopePath: result.scopePath,
           description: repo.description,
           stars: repo.stars,
           cardCount: result.cards.length,
         });
-        router.push({
-          pathname: "/feed",
-          params: {
-            cards: JSON.stringify(result.cards),
-            repoName: result.meta.fullName,
-            repoDesc: result.meta.description ?? "",
-            repoStars: String(result.meta.stars),
-          },
-        });
+        const session = await saveDeckSession({ cards: result.cards, repoName: result.repoSessionName,
+          repoDesc: result.meta.description ?? "", repoStars: String(result.meta.stars) });
+        router.push({ pathname: "/feed", params: { session } });
         setStatus(null);
         setInput("");
         refreshRecent();
@@ -171,6 +171,8 @@ export default function Home() {
           {streak && streak.current > 0 && (
             <Pressable
               style={styles.streakBadge}
+              accessibilityRole="button"
+              accessibilityLabel="View activity statistics"
               onPress={() => router.push("/stats")}
             >
               <Text style={styles.streakFire}>🔥</Text>
@@ -179,16 +181,17 @@ export default function Home() {
           )}
         </View>
         <Text style={styles.subtitle}>
-          master any codebase{"\n"}by scrolling through it
+          learn your way around{"\n"}a codebase
         </Text>
 
         {/* Input */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
+            accessibilityLabel="GitHub repository or folder URL"
             value={input}
             onChangeText={setInput}
-            placeholder="owner/repo or github url"
+            placeholder="owner/repo#apps/mobile"
             placeholderTextColor={color.textTertiary}
             autoCapitalize="none"
             autoCorrect={false}
@@ -203,6 +206,9 @@ export default function Home() {
               isLoading && styles.buttonDisabled,
               pressed && !isLoading && styles.buttonPressed,
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={isLoading ? "Importing repository" : "Learn this repository"}
+            accessibilityState={{ disabled: isLoading || !input.trim(), busy: isLoading }}
             onPress={handleIngest}
             disabled={isLoading || !input.trim()}
           >
@@ -223,15 +229,45 @@ export default function Home() {
         {error && <Text style={styles.error}>{error}</Text>}
 
         {/* Demo link */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.demoButton,
-            pressed && styles.demoButtonPressed,
-          ]}
-          onPress={handleDemo}
-        >
-          <Text style={styles.demoText}>or try the demo deck</Text>
-        </Pressable>
+        <View style={styles.utilityRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.demoButton,
+              pressed && styles.demoButtonPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Try the demo deck"
+            onPress={handleDemo}
+          >
+            <Text style={styles.demoText}>try the demo deck</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.tokenButton,
+              pressed && styles.tokenButtonPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="GitHub access for private repositories"
+            onPress={() => router.push("/github")}
+          >
+            <Text style={styles.tokenButtonText}>
+              {hasToken ? "github connected" : "private repos"}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.tokenButton,
+              pressed && styles.tokenButtonPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Import a local deck file"
+            onPress={() => router.push("/import")}
+          >
+            <Text style={styles.tokenButtonText}>import deck</Text>
+          </Pressable>
+        </View>
 
         {/* Recent repos */}
         {recent.length > 0 && (
@@ -239,17 +275,20 @@ export default function Home() {
             <Text style={styles.recentTitle}>recent</Text>
             {recent.map((repo) => (
               <Pressable
-                key={repo.fullName}
+                key={repo.input}
                 style={({ pressed }) => [
                   styles.recentItem,
                   pressed && styles.recentItemPressed,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${formatRepoSessionName(repo.fullName, repo.scopePath)}`}
+                accessibilityState={{ disabled: isLoading }}
                 onPress={() => handleRecentTap(repo)}
                 disabled={isLoading}
               >
                 <View style={styles.recentLeft}>
                   <Text style={styles.recentName} numberOfLines={1}>
-                    {repo.fullName}
+                    {formatRepoSessionName(repo.fullName, repo.scopePath)}
                   </Text>
                   {repo.description ? (
                     <Text style={styles.recentDesc} numberOfLines={1}>
@@ -273,9 +312,12 @@ export default function Home() {
         )}
       </ScrollView>
 
+      <Pressable accessibilityRole="button" accessibilityLabel="Privacy and local data" onPress={() => router.push("/privacy")} style={{ minHeight: 44, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: color.textSecondary, fontSize: 13 }}>privacy & local data</Text>
+      </Pressable>
       {/* Bottom hint */}
       <Text style={[styles.hint, { paddingBottom: insets.bottom + space.lg }]}>
-        works with any public github repo
+        works with public repos, scoped monorepo paths, and private repos with a token
       </Text>
     </KeyboardAvoidingView>
   );
@@ -379,7 +421,8 @@ const styles = StyleSheet.create({
     marginTop: space.md,
   },
   demoButton: {
-    marginTop: space.xxl,
+    minHeight: 44,
+    justifyContent: "center",
     alignSelf: "flex-start",
   },
   demoButtonPressed: {
@@ -390,6 +433,31 @@ const styles = StyleSheet.create({
     color: color.textTertiary,
     textDecorationLine: "underline",
     textDecorationColor: color.borderSubtle,
+  },
+  utilityRow: {
+    marginTop: space.xxl,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: space.md,
+    alignItems: "center",
+  },
+  tokenButton: {
+    minHeight: 44,
+    paddingHorizontal: space.md,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: color.border,
+    backgroundColor: color.surface,
+    justifyContent: "center",
+  },
+  tokenButtonPressed: {
+    opacity: 0.75,
+  },
+  tokenButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: color.textSecondary,
+    letterSpacing: 0.3,
   },
   // Recent repos
   recentSection: {

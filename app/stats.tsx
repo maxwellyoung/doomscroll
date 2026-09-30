@@ -1,5 +1,5 @@
 /**
- * Stats — proof of learning.
+ * Stats — activity, not proof of understanding.
  *
  * Dieter Rams: honest data, no vanity metrics.
  * Susan Kare: compact visual density.
@@ -28,7 +28,7 @@ export default function Stats() {
     <View style={[styles.screen, { paddingTop: insets.top + space.lg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} hitSlop={12}>
           <Text style={styles.backArrow}>←</Text>
         </Pressable>
         <Text style={styles.headerTitle}>your stats</Text>
@@ -47,9 +47,9 @@ export default function Stats() {
       {/* Stats grid */}
       <View style={styles.grid}>
         <StatBox label="longest streak" value={`${streak.longest}d`} />
-        <StatBox label="cards mastered" value={String(streak.totalMastered)} />
+        <StatBox label="review milestones" value={String(streak.totalMastered)} />
         <StatBox label="total swipes" value={String(streak.totalSwipes)} />
-        <StatBox label="repos learned" value={String(streak.totalRepos)} />
+        <StatBox label="repo imports" value={String(streak.totalRepos)} />
       </View>
 
       {/* Activity heatmap */}

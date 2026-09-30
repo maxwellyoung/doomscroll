@@ -19,6 +19,8 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { color, space, radius } from "@/lib/design";
 import { haptic } from "@/lib/haptics";
+import { mockCards } from "@/lib/mock-data";
+import { saveDeckSession } from "@/lib/deck-session";
 
 const { width: W } = Dimensions.get("window");
 const ONBOARDED_KEY = "doomscroll:onboarded";
@@ -33,7 +35,7 @@ interface Slide {
 const slides: Slide[] = [
   {
     id: "1",
-    title: "master any\ncodebase",
+    title: "get to know\na codebase",
     subtitle: "Point at a GitHub repo.\nWe turn it into a deck of code cards.",
     visual: "ƒ  τ  ◆  ◇  □",
   },
@@ -48,7 +50,7 @@ const slides: Slide[] = [
     id: "3",
     title: "build a\nstreak",
     subtitle:
-      "Master cards through spaced repetition.\nLearn a little every day.\nThe code sticks.",
+      "Revisit the code you find difficult.\nLearn a little every day.",
     visual: "🔥",
   },
 ];
@@ -73,6 +75,16 @@ export default function Onboarding() {
     router.replace("/");
   };
 
+  const handleDemo = async () => {
+    haptic.light();
+    try {
+      const session = await saveDeckSession({ cards: mockCards, repoName: "demo/typescript-patterns",
+        repoDesc: "10 TypeScript patterns to explore", repoStars: "0" });
+      await AsyncStorage.setItem(ONBOARDED_KEY, "true");
+      router.replace({ pathname: "/feed", params: { session } });
+    } catch { router.replace("/"); }
+  };
+
   const handleNext = () => {
     haptic.light();
     if (activeIndex < slides.length - 1) {
@@ -95,7 +107,12 @@ export default function Onboarding() {
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
         renderItem={({ item }) => (
           <View style={[styles.slide, { width: W }]}>
-            <Text style={styles.visual}>{item.visual}</Text>
+            {item.id === "1" ? (
+              <View style={styles.codePreview}>
+                <Text style={styles.codeLabel}>preview · typescript demo</Text>
+                <Text style={styles.codeText}>{"function useDebounce<T>(\n  value: T, delay: number\n): T {\n  // full body in the demo card\n}"}</Text>
+              </View>
+            ) : <Text style={styles.visual}>{item.visual}</Text>}
             <Text style={styles.slideTitle}>{item.title}</Text>
             <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
           </View>
@@ -129,6 +146,7 @@ export default function Onboarding() {
             styles.button,
             pressed && styles.buttonPressed,
           ]}
+          accessibilityRole="button"
           onPress={handleNext}
         >
           <Text style={styles.buttonText}>
@@ -136,9 +154,13 @@ export default function Onboarding() {
           </Text>
         </Pressable>
 
+        <Pressable accessibilityRole="button" accessibilityLabel="Try the code demo now" onPress={handleDemo} style={{ minHeight: 44, justifyContent: "center" }}>
+          <Text style={{ fontSize: 16, color: color.blue, fontWeight: "600" }}>try real code now</Text>
+        </Pressable>
+
         {/* Skip */}
         {activeIndex < slides.length - 1 && (
-          <Pressable onPress={handleDone}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Skip introduction" onPress={handleDone}>
             <Text style={styles.skipText}>skip</Text>
           </Pressable>
         )}
@@ -167,6 +189,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xxl,
     gap: space.lg,
   },
+  codePreview: { padding: space.base, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: radius.md, gap: space.sm },
+  codeLabel: { fontSize: 12, color: color.textSecondary },
+  codeText: { fontSize: 13, lineHeight: 20, fontFamily: "monospace", color: color.text },
   visual: {
     fontSize: 40,
     color: color.textTertiary,

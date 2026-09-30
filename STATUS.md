@@ -1,18 +1,10 @@
 # Status
 
-Last updated: 2026-04-29
-Status: Parked
-Lifecycle: parked
+Last updated: 2026-09-30
+Version: 1.1.0 source candidate — unreleased
 
-## Current State
+Doomscroll imports selected GitHub code into source-linked cards for self-assessed review. Imports resolve one commit and read immutable file blobs from its tree. Missing or mismatched source stops the import.
 
-- Expo/app prototype with local changes.
-- Not currently registered as a life lane.
+The queue prioritizes unseen and least recently reviewed cards. It does not schedule spaced review intervals or test understanding. Review progress and recent decks stay on the device; native GitHub tokens use the device credential vault.
 
-## Revive When
-
-- Maxwell deliberately resumes this app/product.
-
-## Next Useful Move
-
-- Keep parked until then.
+Nineteen focused tests and TypeScript checks pass. Native verification remains pending for credential migration, locked-vault recovery, restart, source links, accessibility and local-data removal. Build and App Store verification remain pending for this version.

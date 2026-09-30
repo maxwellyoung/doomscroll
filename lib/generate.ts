@@ -6,6 +6,7 @@
  * not from an AI hallucinating about what the code might do.
  */
 import type { CodeCard, CardType } from "@/types";
+import { generatePromptForBlock } from "./card-prompts";
 import type { ExtractedBlock } from "./extract";
 
 function blockTypeToCardType(type: ExtractedBlock["type"]): CardType {
@@ -80,15 +81,20 @@ const MAX_CARDS = 50;
 /** Convert extracted blocks into learning cards */
 export function generateCards(
   blocks: ExtractedBlock[],
-  maxCards = MAX_CARDS
+  maxCards = MAX_CARDS,
+  source?: { repo: string; commit: string }
 ): CodeCard[] {
-  return blocks.slice(0, maxCards).map((block, i) => ({
-    id: `gen-${i}-${block.name}`,
+  return blocks.slice(0, maxCards).map((block) => ({
+    id: JSON.stringify([block.filePath, block.type, block.name]),
+    source: source && block.startLine && block.endLine
+      ? { ...source, startLine: block.startLine, endLine: block.endLine }
+      : undefined,
     type: blockTypeToCardType(block.type),
     title: block.name,
     filePath: block.filePath,
     code: block.code,
     language: block.language,
+    prompt: generatePromptForBlock(block),
     explanation: generateExplanation(block),
     difficulty: estimateDifficulty(block),
   }));

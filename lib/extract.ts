@@ -20,6 +20,8 @@ export interface ExtractedBlock {
   language: string;
   jsDoc: string | null;
   lineCount: number;
+  startLine?: number;
+  endLine?: number;
 }
 
 /** Extract a balanced brace block starting from a position */
@@ -579,7 +581,11 @@ export function extractBlocks(file: FileContent): ExtractedBlock[] {
     });
   }
 
-  return blocks;
+  return blocks.map((block) => {
+    const offset = src.indexOf(block.code);
+    const startLine = offset < 0 ? undefined : src.slice(0, offset).split("\n").length;
+    return { ...block, startLine, endLine: startLine === undefined ? undefined : startLine + block.code.split("\n").length - 1 };
+  });
 }
 
 /** Deduplicate and rank blocks by interestingness */
@@ -587,7 +593,7 @@ export function rankBlocks(blocks: ExtractedBlock[]): ExtractedBlock[] {
   // Remove duplicates by name
   const seen = new Set<string>();
   const unique = blocks.filter((b) => {
-    const key = `${b.name}:${b.type}`;
+    const key = `${b.filePath}:${b.name}:${b.type}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

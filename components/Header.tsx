@@ -37,7 +37,7 @@ export function Header({ mastered, total, seen }: Props) {
         <View style={styles.stats}>
           <Text style={styles.stat}>
             <Text style={styles.statValue}>{mastered}</Text>
-            <Text style={styles.statLabel}> mastered</Text>
+            <Text style={styles.statLabel}> reviewed</Text>
           </Text>
           <Text style={styles.divider}>·</Text>
           <Text style={styles.stat}>

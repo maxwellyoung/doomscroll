@@ -83,7 +83,7 @@ export function MasteryBurst({ visible, cardTitle, onComplete }: Props) {
 
       {/* Text */}
       <Animated.View style={[styles.content, containerStyle]}>
-        <Text style={styles.label}>MASTERED</Text>
+        <Text style={styles.label}>REVIEWED</Text>
         <Text style={styles.title} numberOfLines={1}>
           {cardTitle}
         </Text>

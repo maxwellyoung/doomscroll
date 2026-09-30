@@ -7,7 +7,8 @@
 import { View, StyleSheet, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
+import { loadDeckSession, type DeckSession } from "@/lib/deck-session";
 import { Header } from "@/components/Header";
 import { CardStack } from "@/components/CardStack";
 import { MasteryBurst } from "@/components/MasteryBurst";
@@ -19,27 +20,28 @@ import type { CodeCard } from "@/types";
 export default function Feed() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    cards: string;
-    repoName: string;
-    repoDesc: string;
-    repoStars: string;
-  }>();
+  const params = useLocalSearchParams<{ session: string }>();
+  const [session, setSession] = useState<DeckSession | null>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+  const [cards, setCards] = useState<CodeCard[]>([]);
+  useEffect(() => {
+    let active = true;
+    setLoadingSession(true);
+    loadDeckSession(params.session ?? "").then(value => {
+      if (!active) return;
+      setSession(value); setCards(value?.cards ?? []); setLoadingSession(false);
+    }).catch(() => { if (active) { setSession(null); setCards([]); setLoadingSession(false); } });
+    return () => { active = false; };
+  }, [params.session]);
+  const deck = useCardDeck(cards, session?.repoName);
 
-  const cards: CodeCard[] = useMemo(() => {
-    try {
-      return JSON.parse(params.cards ?? "[]");
-    } catch {
-      return [];
-    }
-  }, [params.cards]);
-
-  const deck = useCardDeck(cards, params.repoName);
+  if (loadingSession) return <View style={[styles.screen, styles.center]}><Text style={styles.emptyText}>Loading deck…</Text></View>;
+  if (deck.isLoading) return <View style={[styles.screen, styles.center]}><Text style={styles.emptyText}>Loading progress…</Text></View>;
 
   if (cards.length === 0) {
     return (
       <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
-        <Text style={styles.emptyText}>No cards to show</Text>
+        <Text style={styles.emptyText}>This saved deck is unavailable. Open it again from home.</Text>
         <Pressable onPress={() => router.back()}>
           <Text style={styles.backLink}>Go back</Text>
         </Pressable>
@@ -51,15 +53,15 @@ export default function Feed() {
     <View style={[styles.screen, { paddingTop: insets.top + space.sm }]}>
       {/* Repo info + back */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to repositories" onPress={() => router.canGoBack() ? router.back() : router.replace("/")} hitSlop={12}>
           <Text style={styles.backArrow}>←</Text>
         </Pressable>
         <View style={styles.repoInfo}>
           <Text style={styles.repoName} numberOfLines={1}>
-            {params.repoName}
+            {session?.repoName}
           </Text>
-          {params.repoStars !== "0" && (
-            <Text style={styles.repoStars}>★ {params.repoStars}</Text>
+          {session?.repoStars !== "0" && (
+            <Text style={styles.repoStars}>★ {session?.repoStars}</Text>
           )}
         </View>
       </View>
@@ -80,10 +82,7 @@ export default function Feed() {
         <CardStack
           currentCard={deck.currentCard}
           nextCard={deck.nextCard}
-          index={Object.values(deck.progress).reduce(
-            (a, p) => a + p.seen,
-            0
-          )}
+          index={deck.reviewCount}
           progress={deck.progress}
           onSwipeLeft={deck.swipeLeft}
           onSwipeRight={deck.swipeRight}

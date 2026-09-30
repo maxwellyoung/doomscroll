@@ -4,15 +4,26 @@
     "info": {
       "en-US": {
         "title": "doomscroll: Learn Code",
-        "subtitle": "Master Any Codebase by Swiping",
-        "description": "Turn any GitHub repo into a deck of swipeable code cards. Master codebases through spaced repetition — the same technique used to learn languages, now applied to code.\n\nHOW IT WORKS\n\n• Paste any public GitHub repo URL\n• We extract the key functions, types, and patterns\n• Swipe right if you understand it, left to see it again\n• Cards resurface using spaced repetition until you master them\n\nFEATURES\n\n• Supports TypeScript, JavaScript, Python, Rust, Go, and Swift\n• Syntax-highlighted code cards with context\n• Three-tier mastery system: unseen → learning → mastered\n• Streak tracking to build a daily learning habit\n• Per-repo progress saved locally\n• Recent repos for quick access\n• Beautiful dark interface built for focused reading\n• Haptic feedback on every interaction\n\nWHY DOOMSCROLL\n\nReading code is hard. Codebases are overwhelming. doomscroll breaks repos into digestible cards and uses spaced repetition to make the knowledge stick.\n\nSwipe right when you get it. Swipe left to see it again. Swipe up to skip. Master a card after 3 correct swipes.\n\nAll data stays on your device. No accounts, no cloud sync, no tracking.",
-        "keywords": ["code", "learn code", "github", "spaced repetition", "developer tools", "programming", "codebase", "flashcards"],
+        "subtitle": "Explore Code, Card by Card",
+        "description": "Get to know a codebase one small piece at a time. doomscroll turns selected files from a GitHub repository into readable code cards with prompts and source context.\n\nREAD, EXPLAIN, REVISIT\n• Import a public GitHub repo or a scoped folder\n• Read functions, types, and patterns in their original code\n• Try explaining the code before revealing its source comments or reading prompt\n• Open a card’s source at the exact imported commit and line range\n• Choose again, skip, or got it using swipes or buttons\n\nYOUR OWN REVIEW\nUnseen cards appear first, then cards you have reviewed least recently. Three consecutive “got it” ratings complete a card’s review. Ratings reflect your own confidence; they are not a test of understanding or a spaced-interval scheduler.\n\nKEEP CONTEXT\nSupports TypeScript, JavaScript, Python, Rust, Go, and Swift. Extraction is heuristic and can miss or imperfectly extract constructs. Each import selects up to 40 files and creates up to 50 cards. Unchanged cards retain local progress; changes to their code, prompt, or explanation reset it.\n\nTRY IT FIRST\nThe built-in demo needs no account or network connection. Import portable JSON decks for local study. GitHub imports and reopening GitHub repositories require a connection.\n\nPRIVACY\nNo doomscroll account, advertising, analytics, or cloud sync. Review progress stays on your device. GitHub imports contact GitHub; optional native access tokens use the device credential vault. Browser tokens last only for the current page session. Read the app privacy policy for details.",
+        "keywords": [
+          "code",
+          "github",
+          "programming",
+          "developer tools",
+          "codebase",
+          "flashcards",
+          "code review"
+        ],
         "privacyPolicyUrl": "https://ninetynine.digital/doomscroll/privacy",
         "supportUrl": "https://ninetynine.digital/contact",
         "marketingUrl": "https://ninetynine.digital"
       }
     },
-    "categories": ["EDUCATION", "DEVELOPER_TOOLS"],
+    "categories": [
+      "EDUCATION",
+      "DEVELOPER_TOOLS"
+    ],
     "copyright": "2026 Maxwell Young"
   }
 }

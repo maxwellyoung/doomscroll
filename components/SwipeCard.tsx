@@ -7,7 +7,16 @@
  * Muriel Cooper: code in dark space, gradient depth.
  * Marc Rousavy: haptic at every threshold crossing.
  */
-import { Dimensions, StyleSheet, View, Text, ScrollView } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  Dimensions,
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Linking,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
@@ -22,8 +31,10 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import type { CodeCard, CardProgress } from "@/types";
 import { color, space, radius, spring, swipe, cardTypes, difficulty } from "@/lib/design";
+import { getCardPrompt } from "@/lib/card-prompts";
 import { SyntaxHighlight } from "@/lib/syntax";
 import { haptic } from "@/lib/haptics";
+import { sourceUrl } from "@/lib/progress";
 import { getSeenDots } from "@/lib/repetition";
 
 const { width: W } = Dimensions.get("window");
@@ -46,9 +57,15 @@ export function SwipeCard({
   onSwipeRight,
   onSwipeUp,
 }: Props) {
+  const [revealed, setRevealed] = useState(false);
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const hasTriggeredHaptic = useSharedValue(false);
+
+  useEffect(() => {
+    setRevealed(false);
+    setSourceError(false);
+  }, [card.id]);
 
   const gesture = Gesture.Pan()
     .onUpdate((e) => {
@@ -154,6 +171,14 @@ export function SwipeCard({
   const ct = cardTypes[card.type];
   const diff = difficulty[card.difficulty];
   const seenDots = getSeenDots(cardProgress);
+  const prompt = getCardPrompt(card);
+  const source = sourceUrl(card);
+  const [sourceError, setSourceError] = useState(false);
+
+  const handleReveal = () => {
+    void haptic.tick();
+    setRevealed(current => !current);
+  };
 
   return (
     <GestureDetector gesture={gesture}>
@@ -231,6 +256,39 @@ export function SwipeCard({
           <Text style={styles.langBadge}>{card.language}</Text>
         </View>
 
+        {source && (
+          <Pressable accessibilityRole="link" accessibilityLabel="Open original source on GitHub"
+            onPress={() => { void Linking.openURL(source).catch(() => setSourceError(true)); }}
+            style={{ paddingHorizontal: space.lg, paddingVertical: space.sm }}>
+            <Text style={{ color: color.blue, fontSize: 12 }}>view source · {card.source!.commit.slice(0, 7)} ↗</Text>
+          </Pressable>
+        )}
+        {sourceError && <Text style={{ color: color.again, paddingHorizontal: space.lg }}>Could not open GitHub. Try again.</Text>}
+        <View style={styles.promptSection}>
+          <Text style={styles.promptLabel}>prompt</Text>
+          <Text style={styles.promptText}>{prompt}</Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.revealButton,
+              revealed && styles.revealButtonActive,
+              pressed && styles.revealButtonPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? "Hide answer" : "Reveal answer"}
+            accessibilityState={{ expanded: revealed }}
+            onPress={handleReveal}
+          >
+            <Text
+              style={[
+                styles.revealButtonText,
+                revealed && styles.revealButtonTextActive,
+              ]}
+            >
+              {revealed ? "hide answer" : "reveal answer"}
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Code — fills the reading area between title and explanation */}
         <ScrollView
           style={styles.codeScroll}
@@ -242,20 +300,26 @@ export function SwipeCard({
         </ScrollView>
 
         {/* Explanation — pinned near bottom */}
-        <Text style={styles.explanation}>{card.explanation}</Text>
+        <View style={styles.answerSection}>
+          <Text style={styles.answerLabel}>answer</Text>
+          <Text
+            style={[
+              styles.explanation,
+              !revealed && styles.explanationHidden,
+            ]}
+          >
+            {revealed
+              ? card.explanation
+              : "Try to explain it to yourself before revealing the answer."}
+          </Text>
+        </View>
 
-        {/* Hint bar — fades after first 3 swipes */}
-        {swipeCount < 3 && (
-          <View style={styles.hintBar}>
-            <Text style={[styles.hint, { color: color.again }]}>
-              ← again
-            </Text>
-            <Text style={[styles.hint, { color: color.skip }]}>↑ skip</Text>
-            <Text style={[styles.hint, { color: color.got }]}>
-              got it →
-            </Text>
-          </View>
-        )}
+        <View style={styles.hintBar}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Review again" onPress={onSwipeLeft} style={styles.ratingButton}><Text style={[styles.hint, { color: color.again }]}>again</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Skip card" onPress={onSwipeUp} style={styles.ratingButton}><Text style={[styles.hint, { color: color.skip }]}>skip</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Got it" onPress={onSwipeRight} style={styles.ratingButton}><Text style={[styles.hint, { color: color.got }]}>got it</Text></Pressable>
+        </View>
+
       </Animated.View>
     </GestureDetector>
   );
@@ -380,6 +444,54 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: "hidden",
   },
+  promptSection: {
+    marginTop: space.base,
+    marginHorizontal: space.lg,
+    padding: space.base,
+    borderRadius: radius.md,
+    backgroundColor: color.borderSubtle,
+    gap: space.sm,
+  },
+  promptLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: color.textTertiary,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  promptText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: color.text,
+  },
+  revealButton: {
+    alignSelf: "flex-start",
+    height: 30,
+    paddingHorizontal: space.md,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: color.border,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: color.surface,
+  },
+  revealButtonActive: {
+    backgroundColor: color.text,
+    borderColor: color.text,
+  },
+  revealButtonPressed: {
+    opacity: 0.75,
+  },
+  revealButtonText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: color.textSecondary,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  revealButtonTextActive: {
+    color: color.textInverse,
+  },
   // Code
   codeScroll: {
     flex: 1,
@@ -391,13 +503,26 @@ const styles = StyleSheet.create({
   codeContent: {
     padding: space.base,
   },
-  // Explanation
+  answerSection: {
+    paddingHorizontal: space.lg,
+    paddingTop: space.base,
+    gap: space.xs,
+  },
+  answerLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: color.textTertiary,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
   explanation: {
     fontSize: 14,
     lineHeight: 21,
     color: color.textSecondary,
-    paddingHorizontal: space.lg,
-    paddingTop: space.base,
+    minHeight: 42,
+  },
+  explanationHidden: {
+    color: color.textTertiary,
   },
   // Hints
   hintBar: {
@@ -406,6 +531,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
   },
+  ratingButton: { minHeight: 44, minWidth: 64, justifyContent: "center", alignItems: "center" },
   hint: {
     fontSize: 11,
     fontWeight: "500",

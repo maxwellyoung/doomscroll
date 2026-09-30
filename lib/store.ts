@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { CodeCard, CardProgress } from "@/types";
 import { buildQueue } from "./repetition";
 import { recordSwipe } from "./streak";
+import { cardFingerprint, reconcileProgress } from "./progress";
 
 function storageKey(repoName: string) {
   return `doomscroll:progress:${repoName}`;
@@ -24,6 +25,7 @@ interface DeckState {
   allMastered: boolean;
   justMasteredCard: CodeCard | null;
   isLoading: boolean;
+  reviewCount: number;
   swipeRight: () => void;
   swipeLeft: () => void;
   swipeUp: () => void;
@@ -36,32 +38,44 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
   const [isLoading, setIsLoading] = useState(true);
   const [justMasteredCard, setJustMasteredCard] = useState<CodeCard | null>(null);
   const [lastSwipedId, setLastSwipedId] = useState<string | undefined>();
+  const [reviewCount, setReviewCount] = useState(0);
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
   const total = cards.length;
   const key = storageKey(repoName);
 
-  // Load persisted progress on mount
+  const loadedKey = useRef<string | null>(null);
+  const writeQueue = useRef(Promise.resolve());
   useEffect(() => {
-    AsyncStorage.getItem(key)
-      .then((raw) => {
-        setProgress(raw ? JSON.parse(raw) : {});
+    let active = true;
+    loadedKey.current = null;
+    setIsLoading(true);
+    setProgress({});
+    progressRef.current = {};
+    setReviewCount(0);
+    setLastSwipedId(undefined);
+    setJustMasteredCard(null);
+    writeQueue.current.then(() => AsyncStorage.getItem(key))
+      .then(raw => {
+        if (!active) return;
+        setProgress(reconcileProgress(cards, raw ? JSON.parse(raw) : {}));
+        loadedKey.current = key;
         setIsLoading(false);
       })
       .catch(() => {
+        if (!active) return;
         setProgress({});
+        loadedKey.current = key;
         setIsLoading(false);
       });
-  }, [key]);
+    return () => { active = false; loadedKey.current = null; };
+  }, [key, cards]);
 
-  // Save progress on every change (skip initial load)
-  const isFirstRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (!isLoading) {
-      AsyncStorage.setItem(key, JSON.stringify(progress)).catch(() => {});
-    }
+    if (isLoading || loadedKey.current !== key) return;
+    const serialized = JSON.stringify(progress);
+    writeQueue.current = writeQueue.current
+      .then(() => AsyncStorage.setItem(key, serialized)).catch(() => {});
   }, [progress, isLoading, key]);
 
   // Queue recomputes when progress changes
@@ -70,7 +84,7 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
     [cards, progress, lastSwipedId]
   );
 
-  const currentCard = queue[0] ?? null;
+  const currentCard = isLoading ? null : queue[0] ?? null;
   const nextCard = queue[1] ?? null;
 
   const mastered = useMemo(
@@ -80,61 +94,53 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
   const allMastered = mastered >= total && total > 0;
 
   const swipeRight = useCallback(() => {
-    if (!currentCard) return;
+    if (!currentCard || isLoading) return;
     const id = currentCard.id;
     const card = currentCard;
     setLastSwipedId(id);
-    setProgress((prev) => {
-      const seen = (prev[id]?.seen ?? 0) + 1;
-      const wasMastered = prev[id]?.mastered ?? false;
-      const isMastered = seen >= 3;
-
-      // Trigger celebration on first mastery
-      if (isMastered && !wasMastered) {
-        setJustMasteredCard(card);
-      }
-
-      // Record swipe for streak tracking
-      void recordSwipe(isMastered && !wasMastered);
-
-      return {
-        ...prev,
-        [id]: { cardId: id, seen, mastered: isMastered, lastSeen: Date.now() },
-      };
-    });
-  }, [currentCard]);
+    const previous = progressRef.current[id];
+    const seen = (previous?.seen ?? 0) + 1;
+    const isMastered = seen >= 3;
+    if (isMastered && !previous?.mastered) setJustMasteredCard(card);
+    void recordSwipe(isMastered && !previous?.mastered).catch(() => {});
+    const next = { ...progressRef.current,
+      [id]: { cardId: id, seen, mastered: isMastered, lastSeen: Date.now(), fingerprint: cardFingerprint(card) },
+    };
+    progressRef.current = next;
+    setProgress(next);
+    setReviewCount(count => count + 1);
+  }, [currentCard, isLoading]);
 
   const swipeLeft = useCallback(() => {
-    if (!currentCard) return;
+    if (!currentCard || isLoading) return;
     const id = currentCard.id;
     setLastSwipedId(id);
     // Record swipe for streak tracking
-    void recordSwipe(false);
-
-    setProgress((prev) => ({
-      ...prev,
-      [id]: {
-        cardId: id,
-        seen: 0, // Reset — you're starting over on this card
-        mastered: false,
-        lastSeen: Date.now(),
-      },
-    }));
-  }, [currentCard]);
+    void recordSwipe(false).catch(() => {});
+    const next = { ...progressRef.current,
+      [id]: { cardId: id, seen: 0, mastered: false, lastSeen: Date.now(), fingerprint: cardFingerprint(currentCard) },
+    };
+    progressRef.current = next;
+    setProgress(next);
+    setReviewCount(count => count + 1);
+  }, [currentCard, isLoading]);
 
   const swipeUp = useCallback(() => {
-    if (!currentCard) return;
+    if (!currentCard || isLoading) return;
     setLastSwipedId(currentCard.id);
-  }, [currentCard]);
+    setReviewCount(count => count + 1);
+  }, [currentCard, isLoading]);
 
   const clearJustMastered = useCallback(() => {
     setJustMasteredCard(null);
   }, []);
 
   const restart = useCallback(() => {
+    progressRef.current = {};
     setProgress({});
+    setReviewCount(count => count + 1);
     setLastSwipedId(undefined);
-    void AsyncStorage.removeItem(key);
+
   }, [key]);
 
   return {
@@ -146,6 +152,7 @@ export function useCardDeck(cards: CodeCard[], repoName = "default"): DeckState 
     allMastered,
     justMasteredCard,
     isLoading,
+    reviewCount,
     swipeRight,
     swipeLeft,
     swipeUp,

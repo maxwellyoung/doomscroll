@@ -1,6 +1,6 @@
 # doomscroll
 
-Master any codebase by doomscrolling through it. Swipe-to-learn spaced repetition for code.
+Explore a codebase through source-linked code cards and self-assessed review. The current queue prioritizes unseen and least recently reviewed cards; it is not an interval scheduler.
 
 ## Design Philosophy
 
@@ -45,10 +45,10 @@ components/
   CardStack.tsx       — Visible depth (peek-behind next card)
   Header.tsx          — Title, stats, full-width progress bar
   MasteryBurst.tsx    — Mastery celebration animation
-  CompletionScreen.tsx — All-mastered state
+  CompletionScreen.tsx — All-reviewed state
 lib/
   design.ts           — Design system (color, type, spacing, motion springs)
-  store.ts            — useCardDeck hook (swipe state, spaced repetition, per-repo persistence)
+  store.ts            — useCardDeck hook (swipe state, review queue, per-repo persistence)
   github.ts           — GitHub REST API client (fetch repo, tree, files)
   extract.ts          — Multi-language code extraction (TS/JS, Python, Rust, Go, Swift)
   generate.ts         — Card generation from extracted blocks
@@ -56,14 +56,14 @@ lib/
   recent.ts           — Recent repos history (AsyncStorage)
   haptics.ts          — Haptic feedback utilities
   syntax.tsx          — Regex-based syntax highlighting
-  repetition.ts       — Spaced repetition queue (3-tier: unseen → needs work → mastered)
+  repetition.ts       — Review queue (3-tier: unseen → needs work → review complete)
   mock-data.ts        — Seed cards (TypeScript patterns)
 types/
   index.ts            — CodeCard, CardProgress, RepoSession
 ```
 
 ## Swipe Mechanics
-- **Right** = "Got it" — mastered after 3 consecutive correct swipes
+- **Right** = "Got it" — review complete after 3 consecutive self-assessed ratings
 - **Left** = "Again" — resets progress, resurfaces card
 - **Up** = Skip (no progress change)
 

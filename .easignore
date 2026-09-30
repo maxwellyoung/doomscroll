@@ -43,3 +43,11 @@ yarn-error.*
 # generated deck/audio output
 output/
 __pycache__/
+
+# Non-app scripts and generated source exports
+/scripts/build_audiobook.py
+/*-apps-mobile.json
+/.venv/
+
+# Private release handoffs are never part of the app archive.
+/docs/2026-09-30-release-gates.md

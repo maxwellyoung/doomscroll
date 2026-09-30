@@ -1,6 +1,6 @@
 {
   "name": "doomscroll",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -8,17 +8,14 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "deck:export-local": "node scripts/export-local-deck.mjs",
-    "audiobook:build": ".venv/bin/python scripts/build_audiobook.py",
-    "audiobook:rehearsal": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal",
-    "audiobook:rehearsal:bobby": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal --variant bobby-aggressive",
-    "audiobook:rehearsal:standup": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal --variant standup-30sec",
-    "audiobook:rehearsal:review": ".venv/bin/python scripts/build_audiobook.py --cut rehearsal --variant review-defense",
     "fallow": "npx --yes fallow",
     "fallow:dead-code": "npx --yes fallow dead-code",
     "fallow:dupes": "npx --yes fallow dupes",
     "fallow:health": "npx --yes fallow health",
     "fallow:audit": "npx --yes fallow audit",
-    "fallow:fix:dry-run": "npx --yes fallow fix --dry-run"
+    "fallow:fix:dry-run": "npx --yes fallow fix --dry-run",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -31,19 +28,22 @@
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.11",
     "expo-router": "~6.0.23",
+    "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
-    "react-dom": "^19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
+    "react-native-web": "^0.21.2",
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "tsx": "^4.22.3",
     "typescript": "~5.9.2"
   },
   "private": true

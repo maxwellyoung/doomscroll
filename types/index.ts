@@ -7,8 +7,10 @@ export interface CodeCard {
   filePath: string;
   code: string;
   language: string;
+  prompt?: string;
   explanation: string;
   difficulty: 1 | 2 | 3;
+  source?: { repo: string; commit: string; startLine: number; endLine: number };
 }
 
 export type SwipeDirection = "left" | "right" | "up";
@@ -18,6 +20,7 @@ export interface CardProgress {
   seen: number;
   mastered: boolean;
   lastSeen: number;
+  fingerprint?: string;
 }
 
 export interface RepoSession {

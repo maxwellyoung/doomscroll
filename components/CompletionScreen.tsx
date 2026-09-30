@@ -36,13 +36,13 @@ export function CompletionScreen({ mastered, total, onRestart }: Props) {
         </Animated.Text>
 
         <Text style={styles.label}>
-          {allMastered ? "all mastered" : `of ${total} mastered`}
+          {allMastered ? "all reviewed" : `of ${total} reviewed`}
         </Text>
 
         <Text style={styles.message}>
           {allMastered
-            ? "You've internalized every pattern in this deck.\nThe code is part of you now."
-            : "Keep scrolling. Repetition is understanding."}
+            ? "You've marked every card as understood.\nTry explaining the code without looking."
+            : "Keep going, or come back for another review."}
         </Text>
 
         {allMastered && (
@@ -52,6 +52,8 @@ export function CompletionScreen({ mastered, total, onRestart }: Props) {
                 styles.button,
                 pressed && styles.buttonPressed,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Restart this deck review"
               onPress={onRestart}
             >
               <Text style={styles.buttonText}>Review again</Text>
